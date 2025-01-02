@@ -4,6 +4,8 @@ const cors = require("cors");
 const multer = require("multer");
 const xlsx = require("xlsx");
 const bodyParser = require("body-parser");
+const cors = require('cors');
+app.use(cors());
 
 const app = express();
 const port = 5000;
