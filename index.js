@@ -1,16 +1,15 @@
 const express = require("express");
 const sqlite3 = require("sqlite3").verbose();
-const cors = require("cors");  // Keep this one
+const cors = require("cors");
 const multer = require("multer");
 const xlsx = require("xlsx");
 const bodyParser = require("body-parser");
+const fs = require("fs");
 
 const app = express();
 const port = 5000;
 
-
-
-app.use(cors());
+app.use(cors({ origin: '*' }));
 app.use(bodyParser.json());
 
 // Database setup
@@ -29,7 +28,10 @@ const db = new sqlite3.Database("./branches.db", (err) => {
 // CRUD APIs
 app.get("/api/branches", (req, res) => {
     db.all("SELECT * FROM branches", [], (err, rows) => {
-        if (err) return res.status(500).json({ error: err.message });
+        if (err) {
+            console.error("Error fetching branches:", err.message);
+            return res.status(500).json({ error: "Failed to fetch branches" });
+        }
         res.json(rows);
     });
 });
@@ -40,7 +42,10 @@ app.post("/api/branches", (req, res) => {
         `INSERT INTO branches (name, location, manager) VALUES (?, ?, ?)`,
         [name, location, manager],
         function (err) {
-            if (err) return res.status(500).json({ error: err.message });
+            if (err) {
+                console.error("Error inserting branch:", err.message);
+                return res.status(500).json({ error: "Failed to add branch" });
+            }
             res.json({ id: this.lastID });
         }
     );
@@ -53,7 +58,10 @@ app.put("/api/branches/:id", (req, res) => {
         `UPDATE branches SET name = ?, location = ?, manager = ? WHERE id = ?`,
         [name, location, manager, id],
         function (err) {
-            if (err) return res.status(500).json({ error: err.message });
+            if (err) {
+                console.error("Error updating branch:", err.message);
+                return res.status(500).json({ error: "Failed to update branch" });
+            }
             res.sendStatus(200);
         }
     );
@@ -62,7 +70,10 @@ app.put("/api/branches/:id", (req, res) => {
 app.delete("/api/branches/:id", (req, res) => {
     const { id } = req.params;
     db.run(`DELETE FROM branches WHERE id = ?`, [id], function (err) {
-        if (err) return res.status(500).json({ error: err.message });
+        if (err) {
+            console.error("Error deleting branch:", err.message);
+            return res.status(500).json({ error: "Failed to delete branch" });
+        }
         res.sendStatus(200);
     });
 });
@@ -80,12 +91,23 @@ app.post("/api/import", upload.single("file"), (req, res) => {
             [name, location, manager]
         );
     });
+
+    // Clean up the uploaded file
+    fs.unlink(req.file.path, (err) => {
+        if (err) {
+            console.error("Error deleting file:", err.message);
+        }
+    });
+
     res.sendStatus(200);
 });
 
 app.get("/api/export", (req, res) => {
     db.all("SELECT * FROM branches", [], (err, rows) => {
-        if (err) return res.status(500).json({ error: err.message });
+        if (err) {
+            console.error("Error exporting branches:", err.message);
+            return res.status(500).json({ error: "Failed to export branches" });
+        }
         const worksheet = xlsx.utils.json_to_sheet(rows);
         const workbook = xlsx.utils.book_new();
         xlsx.utils.book_append_sheet(workbook, worksheet, "Branches");
