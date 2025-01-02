@@ -1,14 +1,14 @@
 const express = require("express");
 const sqlite3 = require("sqlite3").verbose();
-const cors = require("cors");
+const cors = require("cors");  // Keep this one
 const multer = require("multer");
 const xlsx = require("xlsx");
 const bodyParser = require("body-parser");
-const cors = require('cors');
-app.use(cors());
 
 const app = express();
 const port = 5000;
+
+
 
 app.use(cors());
 app.use(bodyParser.json());
